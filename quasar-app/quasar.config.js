@@ -38,6 +38,9 @@ export default defineConfig((ctx) => {
         node: 'node20',
       },
 
+
+      files: ['./python/app.exe', 'src/python/app.exe', 'src-electron/python/app.exe'],
+
       vueRouterMode: 'hash', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
@@ -93,7 +96,7 @@ export default defineConfig((ctx) => {
 
       // Add this to copy your assets properly
       assetsDir: 'assets',
-      copyPublicDir: true,
+      // copyPublicDir: true,
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
@@ -188,18 +191,24 @@ export default defineConfig((ctx) => {
     electron: {
       preloadScripts: ['electron-preload'],
       bundler: 'builder', // Using electron-builder
-      extraResource: ['backend'],
+      extraResource: ['src-electron/python'],
       packager: {
         // extraResource: ['backend'],
       },
-      
+
       builder: {
         appId: 'com.yourcompany.netcon',
         productName: 'NetCon',
 
+        extraFiles: [
+          {
+            from: 'src-electron/python',
+            to: 'python',
+          },
+        ],
         // Make sure asar doesn't interfere with your executable
         asar: true,
-        asarUnpack: ['backend/**'],
+        // asarUnpack: ['backend/**'],
         // Windows specific configuration
         win: {
           target: 'nsis',

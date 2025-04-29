@@ -4,10 +4,10 @@
   <q-toolbar>
 
     <q-toolbar-title>
-      <img src="src/assets/netcon.png" alt="Company Logo" style="height: 40px; max-width: 150px;" />
+      <img src="~assets/netcon.png" alt="Company Logo" style="height: 40px; max-width: 150px;" />
     </q-toolbar-title>
     <q-toolbar-title>
-      <img src="src/assets/ebl.png" alt="Company Logo" style="margin-top: 10px; height: 40px; max-width: 200px; border:darkslategray;" />
+      <img src="~assets/ebl.png" alt="Company Logo" style="margin-top: 10px; height: 40px; max-width: 200px; border:darkslategray;" />
     </q-toolbar-title>
 
       <q-btn
@@ -18,10 +18,10 @@
   class="q-ml-md"
   @click="logout"
 />
-  
-  
+
+
     <!-- <div>Presented by <strong style="color:blue;">Networld</strong> </div> -->
-    
+
   </q-toolbar>
 </q-header>
 
