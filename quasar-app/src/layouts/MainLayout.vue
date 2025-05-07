@@ -7,7 +7,7 @@
       <img src="~assets/netcon.png" alt="Company Logo" style="height: 40px; max-width: 150px;" />
     </q-toolbar-title>
     <q-toolbar-title>
-      <img src="~assets/ebl.png" alt="Company Logo" style="margin-top: 10px; height: 40px; max-width: 200px; border:darkslategray;" />
+      <!-- <img src="~assets/ebl.png" alt="Company Logo" style="margin-top: 10px; height: 40px; max-width: 200px; border:darkslategray;" /> -->
     </q-toolbar-title>
 
       <q-btn

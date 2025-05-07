@@ -99,7 +99,7 @@
 
             <!-- Optional: forgot password -->
             <q-card-section v-if="!register" class="text-center q-pa-sm">
-              <p class="text-grey-6">Forgot your password?</p>
+              <!-- <p class="text-grey-6">Forgot your password?</p> -->
             </q-card-section>
           </q-card>
         </div>

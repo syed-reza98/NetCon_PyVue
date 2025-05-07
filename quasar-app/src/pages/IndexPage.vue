@@ -2,9 +2,9 @@
   <div class="q-pa-md">
     <q-layout view="hHh lpR fFf">
       <div class="row justify-end ">
-      
+
         <div class="row items-center justify-between q-mb-md">
-  <!-- 🔍 Search in the center -->
+  <!-- Search in the center -->
   <div class="col text-center">
     <q-input
       rounded
@@ -16,22 +16,23 @@
       input-style="color: #000000;"
       style="width: 1100px;"
       color="primary"
-      class="text-white"
+      class="text-white q-pr-md"
     />
   </div>
 
-  <!-- 📦 Filter + Export + Record Count on the right -->
+  <!-- Filter + Export + Record Count on the right -->
   <div class="col-auto row items-center q-mr-md">
     <q-btn
       dense
       flat
       color="primary"
-      icon="filter_alt"
+      :icon="showFilters ? 'expand_less' : 'expand_more'"
       label="Filters"
       no-caps
       @click="showFilters = !showFilters"
       class="q-mr-sm"
     />
+
     <q-btn
       color="primary"
       icon-right="archive"
@@ -255,8 +256,10 @@
 
 
                   <!-- Transaction Table -->
-                  <div >
+                  <div ref="scrollContainer" style="overflow-x: auto; width: 100%;">
                   <q-table
+
+                  class="my-sticky-header-column-table"
                   flat
                   bordered
                   title="Extracted Transaction Data"
@@ -270,21 +273,43 @@
                   :loading="loading"
                   :filter="search"
                   v-model:selected="selected"
-                   :row-key="row => row.transaction_id || row.stan || row.timestamp || Math.random()"
+                   :row-key="row => row.transaction_id || row.stan || row.timestamp"
 
                     >
-
+                    <!-- :row-key="row => row.transaction_id || row.stan || row.timestamp || Math.random()" -->
                    <div class="q-mt-md">
                       Selected: {{ JSON.stringify(selected) }}
                     </div>
 
+                    <!-- <template v-slot:body-cell-stan="props">
+                      <q-td :props="props">
+                        <q-btn
+                          flat
+                          dense
+                          color="primary"
+                          @click.stop="showTransactionLog(props.row)"
+                        >
+                          {{ props.row.stan || 'N/A' }}
+                        </q-btn>
+
+                      </q-td>
+                    </template> -->
                     <template v-slot:body-cell-stan="props">
                       <q-td :props="props">
-                        <q-btn flat dense color="primary" @click="showTransactionLog(props.row)">
-                          {{ props.row.stan || 'N/A' }}
+                        <q-btn
+                          flat
+                          dense
+                          color="primary"
+                          @click.stop="showTransactionLog(props.row)"
+                        >
+                          {{ props.row.stan && props.row.stan.trim() !== '' ? props.row.stan : 'N/A' }}
                         </q-btn>
                       </q-td>
                     </template>
+
+
+
+
 
                     <template v-slot:body-cell-amount="props">
                       <q-td :props="props">
@@ -335,6 +360,7 @@
                         </q-badge>
                       </q-td>
                     </template>
+
                   </q-table>
 
 
@@ -347,7 +373,7 @@
         </q-page>
 
         <!-- EJ Log Popup Dialog -->
-        <q-dialog v-model="isDialogOpen">
+        <!-- <q-dialog v-model="isDialogOpen">
           <q-card style="width: 800px; max-width: 100vw;">
             <q-card-section>
               <div class="text-h6">EJ Log Data</div>
@@ -366,7 +392,37 @@
               <q-btn flat label="Close" color="primary" v-close-popup />
             </q-card-actions>
           </q-card>
-        </q-dialog>
+        </q-dialog> -->
+
+
+        <q-dialog v-model="isDialogOpen" persistent no-backdrop-transition no-shake>
+  <q-card
+    class=" bg-white"
+    style="width: 800px; max-width: 95vw; cursor: move;"
+    ref="dialogCard"
+    @mousedown="startDrag"
+    @mousemove="onDrag"
+    @mouseup="stopDrag"
+    @mouseleave="stopDrag"
+  >
+    <q-card-section class="bg-primary text-white">
+      <div class="text-h6">EJ Log Data</div>
+    </q-card-section>
+
+    <q-separator />
+
+    <q-card-section style="max-height: 400px; overflow-y: auto;">
+      <pre v-if="selectedTransactionLog && selectedTransactionLog.length > 0">{{ selectedTransactionLog }}</pre>
+      <div v-else>No EJ log available.</div>
+    </q-card-section>
+
+    <q-separator />
+
+    <q-card-actions align="right">
+      <q-btn flat label="Close" color="primary" v-close-popup />
+    </q-card-actions>
+  </q-card>
+</q-dialog>
 
 
 
@@ -404,7 +460,10 @@ export default {
     // const transactionTypeFilter = ref(null);
     const transactionTypeFilter = ref([]);
     const showFilters = ref(false)
-
+    const isDragging = ref(false)
+    const offsetX = ref(0)
+    const offsetY = ref(0)
+    const dialogCard = ref(null)
     const collapsed = ref(false); // Start expanded or set to true for collapsed default
     //const drawer = ref(false);
     const drawer = ref(false);
@@ -449,19 +508,36 @@ export default {
     };
 
     //select table base on filter
+    // const visibleColumns = computed(() => {
+    //   return columns.value.filter(col => {
+    //     return filteredRows.value.some(row => {
+    //       const val = row[col.field]
+    //       return val !== null && val !== undefined && val !== '' && val !== 'N/A'
+    //     })
+    //   })
+    // })
     const visibleColumns = computed(() => {
-      return columns.value.filter(col => {
-        return filteredRows.value.some(row => {
-          const val = row[col.field]
-          return val !== null && val !== undefined && val !== '' && val !== 'N/A'
-        })
-      })
-    })
+  return columns.value.filter(col => {
+    // Only include STAN if there's at least one row
+    if (col.name === 'stan') {
+      return filteredRows.value.length > 0;
+    }
 
-    // ✅ Table Columns
+    return filteredRows.value.some(row => {
+      const val = row[col.field];
+      return val !== null && val !== undefined && val !== '' && val !== 'N/A';
+    });
+  });
+});
+
+
+
+    // Table Columns
     const columns = ref([
-      { name: "timestamp", label: "Timestamp", field: "timestamp", sortable: true },
-      { name: "transaction_id", label: "Transaction ID", field: "transaction_id", sortable: true },
+
+      { name: "timestamp", label: "Timestamp", field: "timestamp", sortable: true ,},
+      { name: "transaction_id", label: "Transaction ID", field: "transaction_id", sortable: true,  },
+      { name: "stan", label: "STAN", field: "stan", sortable: true },
       { name: "card_number", label: "Card Number", field: "card_number", sortable: true },
       { name: "transaction_type", label: "Transaction Type", field: "transaction_type", sortable: true },
       { name: "amount", label: "Amount", field: "amount", sortable: true },
@@ -470,7 +546,7 @@ export default {
       { name: "account_number", label: "Account Number", field: "account_number", sortable: true },
       { name: "terminal", label: "Terminal", field: "terminal", sortable: true },
       { name: "transaction_number", label: "Transaction Number", field: "transaction_number", sortable: true },
-      { name: "stan", label: "STAN", field: "stan", sortable: true },
+
       { name: "file_name", label: "File Name", field: "file_name", sortable: true },
 
       // Flags & status
@@ -865,6 +941,28 @@ export default {
       search.value = "";
     }
 
+
+    function startDrag(event) {
+      isDragging.value = true
+      const card = dialogCard.value.$el || dialogCard.value
+      const rect = card.getBoundingClientRect()
+      offsetX.value = event.clientX - rect.left
+      offsetY.value = event.clientY - rect.top
+    }
+
+    function onDrag(event) {
+      if (!isDragging.value) return
+      const card = dialogCard.value.$el || dialogCard.value
+      card.style.position = 'fixed'
+      card.style.left = `${event.clientX - offsetX.value}px`
+      card.style.top = `${event.clientY - offsetY.value}px`
+    }
+
+    function stopDrag() {
+      isDragging.value = false
+    }
+
+
     return {
       filterDropdownOptions,
       updateFilterValues,
@@ -905,7 +1003,11 @@ export default {
       selected,
       visibleColumns,
       showFilters,
-      toggleRow
+      toggleRow,
+      startDrag,
+      onDrag,
+      stopDrag,
+      dialogCard
     };
   },
 };
@@ -979,5 +1081,45 @@ pre {
 .my-sticky-header-table ::v-deep(tbody) {
   scroll-margin-top: 48px;
 }
+
+
+.q-dialog__title {
+  cursor: move;
+  user-select: none;
+}
+
+/* First column (timestamp) sticky */
+.my-sticky-header-table ::v-deep(th:nth-child(1)),
+.my-sticky-header-table ::v-deep(td:nth-child(1)) {
+  position: sticky;
+  left: 0;
+  background-color: #f5fcff;
+  z-index: 3;
+}
+
+.my-sticky-header-table ::v-deep(th:nth-child(2)),
+.my-sticky-header-table ::v-deep(td:nth-child(2)) {
+  position: sticky;
+  left: 60px; /* Adjust depending on your column width */
+  background-color: #f5fcff;
+  z-index: 3;
+}
+
+.my-sticky-header-table ::v-deep(th:nth-child(3)),
+.my-sticky-header-table ::v-deep(td:nth-child(3)) {
+  position: sticky;
+  left: 190px; /* Adjust depending on previous columns width */
+  background-color: #f5fcff;
+  z-index: 3;
+}
+
+.my-sticky-header-table ::v-deep(th:nth-child(4)),
+.my-sticky-header-table ::v-deep(td:nth-child(4)) {
+  position: sticky;
+  left: 315px; /* Adjust depending on previous columns width */
+  background-color: #f5fcff;
+  z-index: 3;
+}
+
 
 </style>

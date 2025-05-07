@@ -25,9 +25,9 @@ class EJService:
         self.val_pattern = re.compile(r'VAL:\s+(\d{3})')
 
         self.notes_dispensed_count_pattern = re.compile(r"(COUNT|NOTES PRESENTED)\s+(\d+),(\d+),(\d+),(\d+)")
-        # Add this pattern to your __init__ method
+
         self.retract_count_pattern = re.compile(r"COUNT\s+(\d+),(\d+),(\d+),(\d+)")
-        # Add these patterns to your __init__ method
+
         self.deposit_notes_pattern = re.compile(r"(\d+) BDT X\s+(\d+) =")
         self.void_notes_pattern = re.compile(r"VOID NOTES RETRACTED:(\d+)")
         # Function to detect scenario type
