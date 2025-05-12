@@ -37,9 +37,17 @@ def load_logs():
                 content = file.read().decode("utf-8", errors="ignore")  # Fix encoding issues
                 lines = content.splitlines()  # Ensure proper line splitting
                 log_contents[file.filename] = lines
-                print(f"Received File: {file.filename}, Size: {len(content)} characters, {len(lines)} lines")  # Debugging
+                logging.info(f"Received File: {file.filename}, Size: {len(content)} characters, {len(lines)} lines")
 
-            df_all_transactions = ej_service.process_transactions(log_contents)
+            # Use the optimized transaction processing method
+            try:
+                all_transactions = ej_service.process_transactions_optimized(log_contents)
+                # Convert to DataFrame for compatibility with existing code
+                import pandas as pd
+                df_all_transactions = pd.DataFrame(all_transactions)
+            except Exception as e:
+                logging.error(f"Error processing transactions: {e}")
+                return jsonify({"error": f"Error processing transactions: {str(e)}"}), 500
 
             if df_all_transactions.empty:
                 print("No transactions extracted!")

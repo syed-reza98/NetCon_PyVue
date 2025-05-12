@@ -5,9 +5,24 @@ from pathlib import Path
 import concurrent.futures
 import re
 import datetime
+import os
+import json
 
 # Configure logging for tracking progress and debugging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# Configuration settings
+CONFIG = {
+    # Trial configuration
+    "trial": {
+        "start_date": datetime.datetime(2025, 5, 6),
+        "duration_days": 15
+    },
+    # Currency denominations
+    "currency": {
+        "denominations": [100, 500, 1000]
+    }
+}
 
 class EJService:
     def __init__(self):
@@ -44,12 +59,24 @@ class EJService:
     def is_trial_active(self):
         """
         Check if the trial period is active based on the start date and duration.
+        
+        Returns:
+            bool: True if the current date is within the trial period, False otherwise
         """
-        trial_start_date = datetime.datetime(2025, 5, 6)
-        trial_duration = 15
+        trial_start_date = CONFIG["trial"]["start_date"]
+        trial_duration = CONFIG["trial"]["duration_days"]
         return datetime.datetime.today() < trial_start_date + datetime.timedelta(days=trial_duration)
 
     def load_logs(self, file_paths):
+        """
+        Load transaction logs from multiple files using parallel processing.
+        
+        Args:
+            file_paths (list): List of file paths to load logs from
+            
+        Returns:
+            dict: Dictionary with file paths as keys and file lines as values
+        """
         log_contents = {}
 
         def load_single_file(file_path):
@@ -69,6 +96,15 @@ class EJService:
 
 
     def process_transactions(self, log_contents):
+        """
+        Process transaction logs from multiple files in parallel.
+        
+        Args:
+            log_contents (dict): Dictionary with file paths as keys and file lines as values
+            
+        Returns:
+            pandas.DataFrame: Structured transaction data
+        """
         all_transactions = []
 
         def process_single_file(file_path, lines):
@@ -88,7 +124,66 @@ class EJService:
 
         return pd.DataFrame(all_transactions)
 
+    def process_transactions_optimized(self, log_contents, batch_size=100):
+        """
+        Process transaction logs from multiple files with optimized performance.
+        This method processes transactions in batches to improve memory efficiency.
+        
+        Args:
+            log_contents (dict): Dictionary with file paths as keys and file lines as values
+            batch_size (int): Number of transactions to process in each batch
+            
+        Returns:
+            list: List of processed transaction data dictionaries
+        """
+        all_transactions = []
+        processed_count = 0
+        
+        # Process each file
+        for file_path, lines in log_contents.items():
+            logging.info(f"Processing file: {file_path}")
+            
+            # Convert generator to a list for batching
+            transactions_list = list(self.segment_transactions(lines))
+            file_total = len(transactions_list)
+            logging.info(f"Found {file_total} transactions in {file_path}")
+            
+            # Process transactions in batches
+            for i in range(0, file_total, batch_size):
+                batch = transactions_list[i:i + batch_size]
+                batch_transactions = []
+                
+                # Process each transaction in the batch in parallel
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    batch_futures = {executor.submit(self.extract_transaction_details, t): t for t in batch}
+                    
+                    for future in concurrent.futures.as_completed(batch_futures):
+                        try:
+                            transaction_data = future.result()
+                            if transaction_data:
+                                transaction_data["file_path"] = file_path
+                                batch_transactions.append(transaction_data)
+                        except Exception as e:
+                            logging.error(f"Error processing transaction: {e}")
+                
+                # Add batch transactions to the overall result
+                all_transactions.extend(batch_transactions)
+                processed_count += len(batch)
+                logging.info(f"Progress: {processed_count} transactions processed from {file_path}")
+        
+        logging.info(f"Total transactions processed: {processed_count}")
+        return all_transactions
+
     def segment_transactions(self, lines):
+        """
+        Segment an EJ log file into individual transactions.
+        
+        Args:
+            lines (list): Lines from an EJ log file
+            
+        Yields:
+            list: List of lines for each transaction
+        """
         current_transaction = []
         in_transaction = False
         previous_line = None
@@ -109,7 +204,15 @@ class EJService:
         logging.info(f"Segmented {len(lines)} lines into transactions")
 
     def detect_scenario(self, transaction):
-        """Detect the scenario type from a transaction log"""
+        """
+        Detect the scenario type from a transaction log.
+        
+        Args:
+            transaction (list or str): Transaction data as a list of lines or a string
+            
+        Returns:
+            str: Detected scenario type or 'unknown_scenario' if no match
+        """
         # Convert transaction list to a single string for pattern matching
         transaction_text = '\n'.join(transaction) if isinstance(transaction, list) else transaction
         
@@ -119,6 +222,15 @@ class EJService:
         return "unknown_scenario"
 
     def extract_transaction_details(self, transaction):
+        """
+        Extract detailed transaction information from EJ log transaction.
+        
+        Args:
+            transaction (list): List of strings representing a transaction
+            
+        Returns:
+            dict: Dictionary with structured transaction data
+        """
         transaction_data = {
             "transaction_id": None, 
             "timestamp": None, 
@@ -196,6 +308,249 @@ class EJService:
         for i, line in enumerate(transaction):
             line = line.strip()
             logging.debug(f"Processing line: {line}")
+            transaction_data = self._extract_basic_transaction_info(transaction, i, line, transaction_data)
+            transaction_data = self._extract_cash_details(line, transaction_data)
+
+            # Determine transaction status
+            if "TRANSACTION CANCELED" in line:
+                transaction_data["status"] = "Canceled"
+            elif "NOTES TAKEN" in line:
+                transaction_data["status"] = "Withdraw Completed"
+            elif "CIM-DEPOSIT COMPLETED" in line:
+                diposit_complete_match = re.search(self.diposit_complete_pattern, line)
+                if diposit_complete_match:
+                    result = diposit_complete_match.group(1).strip()
+                    transaction_data["result"] = result
+                    if result == "- ITEMS REFUNDED":
+                        transaction_data["status"] = "ITEMS REFUNDED"
+                    elif result == "-ITEMS REFUND FAILED":
+                        transaction_data["status"] = "ITEMS REFUND FAILED"
+                    else:
+                        transaction_data["status"] = "Deposit Completed"
+                        # Process deposit notes with improved error handling
+                        transaction_data = self._process_deposit_notes(transaction, i, transaction_data)
+
+            # Extract STAN and terminal information
+            if "DATE" in line and "HOUR" in line and "STAN" in line and "TERMINAL" in line:
+                try:
+                    # Add bounds checking before accessing next line
+                    if i + 1 < len(transaction):
+                        stan_terminal_match = self.stan_terminal_pattern.search(transaction[i + 1])
+                        if stan_terminal_match:
+                            date, time, stan, terminal = stan_terminal_match.groups()
+                            transaction_data["timestamp"] = f"{date} {time}"
+                            transaction_data["stan"] = stan
+                            transaction_data["terminal"] = terminal
+                except Exception as e:
+                    logging.error(f"Error extracting STAN and terminal information: {e}")
+
+            # Extract account number
+            if "ACCOUNT NBR." in line:
+                account_match = self.account_pattern.search(line)
+                if account_match:
+                    transaction_data["account_number"] = account_match.group(1)
+
+            # Extract transaction number
+            if "TRN. NBR" in line:
+                transaction_number_match = self.transaction_number_pattern.search(line)
+                if transaction_number_match:
+                    transaction_data["transaction_number"] = transaction_number_match.group(1)
+
+            # Extract cash totals
+            if "DISPENSED" in line or "REJECTED" in line or "REMAINING" in line:
+                cash_totals_match = self.cash_totals_pattern.search(line)
+                if cash_totals_match:
+                    key = cash_totals_match.group(1).lower()
+                    transaction_data[f"cash_{key}"] = cash_totals_match.group(2).strip()
+
+            # notes_dispensed_count_pattern
+            if "COUNT" in line or "NOTES PRESENTED" in line:
+                notes_dispensed_count_match = self.notes_dispensed_count_pattern.search(line)
+                if notes_dispensed_count_match:
+                    transaction_data["notes_dispensed_count"] = notes_dispensed_count_match.group(1)
+                    transaction_data["notes_dispensed_t1"] = notes_dispensed_count_match.group(2)
+                    transaction_data["notes_dispensed_t2"] = notes_dispensed_count_match.group(3)
+                    transaction_data["notes_dispensed_t3"] = notes_dispensed_count_match.group(4)
+                    transaction_data["notes_dispensed_t4"] = notes_dispensed_count_match.group(5)
+
+            transaction_data['ej_log'] = transaction
+        
+        transaction_data["scenario"] = self.detect_scenario(transaction)
+
+        if transaction_data["scenario"] == "withdrawal_retracted":
+            transaction_data = self._process_withdrawal_retract(transaction, transaction_data)
+
+        if transaction_data["scenario"] == "deposit_retract":
+            transaction_data = self._process_deposit_retract(transaction, transaction_data)
+
+        if transaction_data["scenario"] == "Unknown":
+            transaction_data = self._process_unknown_scenario(transaction, transaction_data)
+
+        return transaction_data
+
+    def merge_files(self, file_paths, output_path='merged_EJ_logs.txt'):
+        """
+        Merge multiple EJ log files into a single file.
+        
+        Args:
+            file_paths (list): List of file paths to merge
+            output_path (str, optional): Path for the merged file. Defaults to 'merged_EJ_logs.txt'.
+            
+        Returns:
+            str or None: Path to the merged file on success, None on failure
+        """
+        try:
+            with open(output_path, 'w', encoding='utf-8') as outfile:
+                for file_path in file_paths:
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as infile:
+                            outfile.write(infile.read())
+                            outfile.write('\n')
+                    except Exception as e:
+                        logging.error(f'Error reading file {file_path}: {e}')
+                        return None
+            logging.info(f'Merged files into {output_path}')
+            return output_path
+        except Exception as e:
+            logging.error(f'Error merging files: {e}')
+            return None
+
+    def _process_withdrawal_retract(self, transaction, transaction_data):
+        """
+        Process withdrawal retract scenario and extract relevant data.
+        
+        Args:
+            transaction (list): Transaction data as a list of lines
+            transaction_data (dict): Dictionary to store extracted data
+            
+        Returns:
+            dict: Updated transaction data
+        """
+        for line in transaction:
+            if "COUNT" in line:
+                count_match = self.retract_count_pattern.search(line)
+                if count_match:
+                    try:
+                        transaction_data["retract_type1"] = int(count_match.group(1))
+                        transaction_data["retract_type2"] = int(count_match.group(2))
+                        transaction_data["retract_type3"] = int(count_match.group(3))
+                        transaction_data["retract_type4"] = int(count_match.group(4))
+                        transaction_data["total_retracted_notes"] = (
+                            transaction_data["retract_type1"] + 
+                            transaction_data["retract_type2"] + 
+                            transaction_data["retract_type3"] + 
+                            transaction_data["retract_type4"]
+                        )
+                    except (ValueError, IndexError) as e:
+                        logging.error(f"Error processing retract count: {e}")
+                    break
+        return transaction_data
+
+    def _process_deposit_retract(self, transaction, transaction_data):
+        """
+        Process deposit retract scenario and extract note denominations.
+        
+        Args:
+            transaction (list): Transaction data as a list of lines
+            transaction_data (dict): Dictionary to store extracted data
+            
+        Returns:
+            dict: Updated transaction data
+        """
+        # Initialize note counts to 0
+        deposit_100 = 0
+        deposit_500 = 0
+        deposit_1000 = 0
+        unknown_retracted = 0
+        
+        # Process each line for note counts
+        for line in transaction:
+            try:
+                # Check for regular notes (100, 500, 1000 BDT)
+                note_match = self.deposit_notes_pattern.search(line)
+                if note_match:
+                    denomination = int(note_match.group(1))
+                    count = int(note_match.group(2))
+                    
+                    if denomination == 100:
+                        deposit_100 = count
+                    elif denomination == 500:
+                        deposit_500 = count
+                    elif denomination == 1000:
+                        deposit_1000 = count
+                
+                # Check for void notes (unknown denomination)
+                void_match = self.void_notes_pattern.search(line)
+                if void_match:
+                    unknown_retracted = int(void_match.group(1))
+            except (ValueError, IndexError) as e:
+                logging.error(f"Error processing deposit retract line: {e}")
+                continue
+        
+        # Store the extracted values
+        transaction_data["deposit_retract_100"] = deposit_100
+        transaction_data["deposit_retract_500"] = deposit_500
+        transaction_data["deposit_retract_1000"] = deposit_1000
+        transaction_data["deposit_retract_unknown"] = unknown_retracted
+        transaction_data["total_deposit_retracted"] = deposit_100 + deposit_500 + deposit_1000 + unknown_retracted
+        
+        return transaction_data
+
+    def _process_unknown_scenario(self, transaction, transaction_data):
+        """
+        Process unknown transaction scenario and extract available data.
+        
+        Args:
+            transaction (list): Transaction data as a list of lines
+            transaction_data (dict): Dictionary to store extracted data
+            
+        Returns:
+            dict: Updated transaction data
+        """
+        # Initialize variables to avoid UnboundLocalError
+        unknown_100 = 0
+        unknown_500 = 0
+        unknown_1000 = 0
+        
+        for line in transaction:
+            try:
+                # Check for regular notes (100, 500, 1000 BDT)
+                note_match = self.deposit_notes_pattern.search(line)
+                if note_match:
+                    denomination = int(note_match.group(1))
+                    count = int(note_match.group(2))
+                    
+                    if denomination == 100:
+                        unknown_100 = count
+                    elif denomination == 500:
+                        unknown_500 = count
+                    elif denomination == 1000:
+                        unknown_1000 = count
+            except (ValueError, IndexError) as e:
+                logging.error(f"Error processing unknown scenario: {e}")
+                continue
+        
+        # Store the extracted values
+        transaction_data["deposit_retract_100"] = unknown_100
+        transaction_data["deposit_retract_500"] = unknown_500
+        transaction_data["deposit_retract_1000"] = unknown_1000
+        
+        return transaction_data
+
+    def _extract_basic_transaction_info(self, transaction, i, line, transaction_data):
+        """
+        Extract basic transaction information from a line.
+        
+        Args:
+            transaction (list): Transaction data as a list of lines
+            i (int): Current line index
+            line (str): Current line text
+            transaction_data (dict): Dictionary to store extracted data
+            
+        Returns:
+            dict: Updated transaction data
+        """
+        try:
             # Extract transaction ID from the previous line if available
             if "*TRANSACTION START*" in line and i > 0:
                 tx_id_line = transaction[i - 1].strip()
@@ -215,7 +570,7 @@ class EJService:
                 card_match = self.card_pattern.search(line)
                 if card_match:
                     transaction_data["card_number"] = card_match.group(1)
-
+            
             # Determine transaction type
             if "CIM-DEPOSIT ACTIVATED" in line:
                 transaction_data["transaction_type"] = "Deposit"
@@ -227,7 +582,23 @@ class EJService:
                 transaction_data["transaction_type"] = "PIN Change"
             elif "AUTHENTICATION" in line:
                 transaction_data["transaction_type"] = "Authentication"
-
+        except Exception as e:
+            logging.error(f"Error extracting basic transaction info: {e}")
+            
+        return transaction_data
+        
+    def _extract_cash_details(self, line, transaction_data):
+        """
+        Extract cash details from transaction line.
+        
+        Args:
+            line (str): Line from transaction log
+            transaction_data (dict): Dictionary to store extracted data
+            
+        Returns:
+            dict: Updated transaction data
+        """
+        try:
             # Check for retract
             if re.search(r"E\*5", line):
                 transaction_data["retract"] = "Yes"
@@ -251,254 +622,51 @@ class EJService:
                 response_code_match = self.response_code_pattern.search(line)
                 if response_code_match:
                     transaction_data["response_code"] = response_code_match.group(1)
-
-            # Check for authentication
-            if "AUTHENTICATION" in line:
-                transaction_data["authentication"] = True
-
-            # Check for PIN entry
-            if "PIN ENTERED" in line:
-                transaction_data["pin_entry"] = True
-
-            # Extract notes dispensed
-            if "DISPENSED" in line:
-                notes_match = self.notes_pattern.search(line)
-                if notes_match:
-                    transaction_data["notes_dispensed"] = notes_match.group(1).strip()
-                    transaction_data["dispensed_t1"] = transaction_data["notes_dispensed"][0:5]
-                    transaction_data["dispensed_t2"] = transaction_data["notes_dispensed"][6:11]
-                    transaction_data["dispensed_t3"] = transaction_data["notes_dispensed"][12:17]
-                    transaction_data["dispensed_t4"] = transaction_data["notes_dispensed"][18:23]
-
-            # Determine transaction status
-            if "TRANSACTION CANCELED" in line:
-                transaction_data["status"] = "Canceled"
-            elif "NOTES TAKEN" in line:
-                transaction_data["status"] = "Withdraw Completed"
-            elif "CIM-DEPOSIT COMPLETED" in line:
-                diposit_complete_match = re.search(self.diposit_complete_pattern, line)
-                if diposit_complete_match:
-                    result = diposit_complete_match.group(1).strip()
-                    transaction_data["result"] = result
-                    if result == "- ITEMS REFUNDED":
-                        transaction_data["status"] = "ITEMS REFUNDED"
-                    elif result == "-ITEMS REFUND FAILED":
-                        transaction_data["status"] = "ITEMS REFUND FAILED"
-                    else:
-                        transaction_data["status"] = "Deposit Completed"
-                        # transaction_data["status"] = "Deposit Completed"
-                        val_line = transaction[i + 6].strip()
-                        val_match = self.val_pattern.search(val_line)
-                        if val_match:
-                            val_value = int(val_match.group(1))
-                            if val_value > 0:
-                                cash_details = transaction[i + 7:i + 11]
-                                denomination_details = transaction[i + 12:i + 21]
-                                result = []
-                                for denom_detail in denomination_details:
-                                    denom_lines = denom_detail.strip().split('\n')
-                                    for denom_line in denom_lines:
-                                        denom_row = denom_line.split()
-                                        result.append(denom_row)
-                                cash_result = {}
-                                for cash_detail in cash_details:
-                                    # There are Two types of pattern in first 2 lines for notes data extraction. Two type of Example lines for cash_detail=transaction[i + 7:i + 11] total 4 lines are given below:
-                                    # Example 1: 
-                                    # BDT100-002,BDT500-003,  // 
-                                    # BDT1000-003
-                                    # REF: 000
-                                    # REJECTS:001*(1
-                                    # S
-
-                                    # Example 2:
-                                    # BDT500-001,
-                                    # BDT1000-000
-                                    # REF: 000
-                                    # REJECTS:000*(1
-                                    # S
-
-                                    # Modify the code below to handle both cases
-
-                                    cash_lines = cash_detail.strip().split('\n')
-                                    notes_data = [cash_line.strip(',') for cash_line in cash_lines if cash_line.startswith('BDT')]
-                                    for cash_item in notes_data:
-                                        try:
-                                            parts = cash_item.split('-')
-                                            if len(parts) == 2:
-                                                note, count = parts
-                                                column_name = f"Note_Count_{note}"
-                                                cash_result[column_name] = int(count)
-                                            else:
-                                                logging.error(f"Unexpected format for cash item '{cash_item}'")
-                                        except ValueError as e:
-                                            logging.error(f"Error processing cash item '{cash_item}': {e}")
-                                            continue
-                                transaction_data.update({
-                                    'Number of Total Inserted Notes': val_value,
-                                    'Note_Count_BDT500': cash_result.get('Note_Count_BDT500', 0),
-                                    'Note_Count_BDT1000': cash_result.get('Note_Count_BDT1000', 0),
-                                    'BDT500_ABOX': int(result[1][1]) if len(result) > 1 and len(result[1]) > 1 else 0,
-                                    'BDT500_TYPE1': int(result[1][2]) if len(result) > 1 and len(result[1]) > 2 else 0,
-                                    'BDT500_TYPE2': int(result[1][3]) if len(result) > 1 and len(result[1]) > 3 else 0,
-                                    'BDT500_TYPE3': int(result[1][4]) if len(result) > 1 and len(result[1]) > 4 else 0,
-                                    'BDT500_TYPE4': int(result[5][1]) if len(result) > 5 and len(result[5]) > 1 else 0,
-                                    'BDT500_RETRACT': int(result[5][2]) if len(result) > 5 and len(result[5]) > 2 else 0,
-                                    'BDT500_REJECT': int(result[5][3]) if len(result) > 5 and len(result[5]) > 3 else 0,
-                                    'BDT500_RETRACT2': int(result[5][4]) if len(result) > 5 and len(result[5]) > 4 else 0,
-                                    'BDT1000_ABOX': int(result[2][1]) if len(result) > 2 and len(result[2]) > 1 else 0,
-                                    'BDT1000_TYPE1': int(result[2][2]) if len(result) > 2 and len(result[2]) > 2 else 0,
-                                    'BDT1000_TYPE2': int(result[2][3]) if len(result) > 2 and len(result[2]) > 3 else 0,
-                                    'BDT1000_TYPE3': int(result[2][4]) if len(result) > 2 and len(result[2]) > 4 else 0,
-                                    'BDT1000_TYPE4': int(result[6][1]) if len(result) > 6 and len(result[6]) > 1 else 0,
-                                    'BDT1000_RETRACT': int(result[6][2]) if len(result) > 6 and len(result[6]) > 2 else 0,
-                                    'BDT1000_REJECT': int(result[6][3]) if len(result) > 6 and len(result[6]) > 3 else 0,
-                                    'BDT1000_RETRACT2': int(result[6][4]) if len(result) > 6 and len(result[6]) > 4 else 0,
-                                    'UNKNOWN_TYPE4': int(result[7][1]) if len(result) > 7 and len(result[7]) > 1 and result[7][0] == 'UNKNOWN' else 0,
-                                    'UNKNOWN_RETRACT': int(result[7][2]) if len(result) > 7 and len(result[7]) > 2 and result[7][0] == 'UNKNOWN' else 0,
-                                    'UNKNOWN_REJECT': int(result[7][3]) if len(result) > 7 and len(result[7]) > 3 and result[7][0] == 'UNKNOWN' else 0,
-                                    'UNKNOWN_RETRACT2': int(result[7][4]) if len(result) > 7 and len(result[7]) > 4 and result[7][0] == 'UNKNOWN' else 0,
-                                    'TOTAL_ABOX': int(result[3][1]) if len(result) > 3 and len(result[3]) > 1 else 0,
-                                    'TOTAL_TYPE1': int(result[3][2]) if len(result) > 3 and len(result[3]) > 2 else 0,
-                                    'TOTAL_TYPE2': int(result[3][3]) if len(result) > 3 and len(result[3]) > 3 else 0,
-                                    'TOTAL_TYPE3': int(result[3][4]) if len(result) > 3 and len(result[3]) > 4 else 0,
-                                    'TOTAL_TYPE4': int(result[8][1]) if len(result) > 8 and len(result[8]) > 1 else (int(result[7][1]) if len(result) > 7 and len(result[7]) > 1 else 0),
-                                    'TOTAL_RETRACT': int(result[8][2]) if len(result) > 8 and len(result[8]) > 2 else (int(result[7][2]) if len(result) > 7 and len(result[7]) > 2 else 0),
-                                    'TOTAL_REJECT': int(result[8][3]) if len(result) > 8 and len(result[8]) > 3 else (int(result[7][3]) if len(result) > 7 and len(result[7]) > 3 else 0),
-                                    'TOTAL_RETRACT2': int(result[8][4]) if len(result) > 8 and len(result[8]) > 4 else (int(result[7][4]) if len(result) > 7 and len(result[7]) > 4 else 0),
-                                })
-
-            # Extract STAN and terminal information
-            if "DATE" in line and "HOUR" in line and "STAN" in line and "TERMINAL" in line:
-                stan_terminal_match = self.stan_terminal_pattern.search(transaction[i + 1])
-                if stan_terminal_match:
-                    date, time, stan, terminal = stan_terminal_match.groups()
-                    transaction_data["timestamp"] = f"{date} {time}"
-                    transaction_data["stan"] = stan
-                    transaction_data["terminal"] = terminal
-
-            # Extract account number
-            if "ACCOUNT NBR." in line:
-                account_match = self.account_pattern.search(line)
-                if account_match:
-                    transaction_data["account_number"] = account_match.group(1)
-
-            # Extract transaction number
-            if "TRN. NBR" in line:
-                transaction_number_match = self.transaction_number_pattern.search(line)
-                if transaction_number_match:
-                    transaction_data["transaction_number"] = transaction_number_match.group(1)
-
-            # Extract cash totals
-            if "DISPENSED" in line or "REJECTED" in line or "REMAINING" in line:
-                cash_totals_match = self.cash_totals_pattern.search(line)
-                if cash_totals_match:
-                    key = cash_totals_match.group(1).lower()
-                    transaction_data[f"cash_{key}"] = cash_totals_match.group(2).strip()
-
-            # notes_dispensed_count_pattern
-            # Fix this line in the extract_transaction_details method
-            if "COUNT" in line or "NOTES PRESENTED" in line:
-                notes_dispensed_count_match = self.notes_dispensed_count_pattern.search(line)
-                if notes_dispensed_count_match:
-                    transaction_data["notes_dispensed_count"] = notes_dispensed_count_match.group(1)
-                    transaction_data["notes_dispensed_t1"] = notes_dispensed_count_match.group(2)
-                    transaction_data["notes_dispensed_t2"] = notes_dispensed_count_match.group(3)
-                    transaction_data["notes_dispensed_t3"] = notes_dispensed_count_match.group(4)
-                    transaction_data["notes_dispensed_t4"] = notes_dispensed_count_match.group(5)
-
-
-            transaction_data['ej_log'] = transaction
-        
-        transaction_data["scenario"] = self.detect_scenario(transaction)
-
-        if transaction_data["scenario"] == "withdrawal_retracted":
-            for line in transaction:
-                if "COUNT" in line:
-                    count_match = self.retract_count_pattern.search(line)
-                    if count_match:
-                        transaction_data["retract_type1"] = int(count_match.group(1))
-                        transaction_data["retract_type2"] = int(count_match.group(2))
-                        transaction_data["retract_type3"] = int(count_match.group(3))
-                        transaction_data["retract_type4"] = int(count_match.group(4))
-                        transaction_data["total_retracted_notes"] = (
-                            transaction_data["retract_type1"] + 
-                            transaction_data["retract_type2"] + 
-                            transaction_data["retract_type3"] + 
-                            transaction_data["retract_type4"]
-                        )
-                        break
-        # Add at the end of extract_transaction_details, after the withdrawal_retracted handler
-
-        if transaction_data["scenario"] == "deposit_retract":
-            # Initialize note counts to 0
-            deposit_100 = 0
-            deposit_500 = 0
-            deposit_1000 = 0
-            unknown_retracted = 0
+        except Exception as e:
+            logging.error(f"Error extracting cash details: {e}")
             
-            # Process each line for note counts
-            for line in transaction:
-                # Check for regular notes (100, 500, 1000 BDT)
-                note_match = self.deposit_notes_pattern.search(line)
-                if note_match:
-                    denomination = int(note_match.group(1))
-                    count = int(note_match.group(2))
-                    
-                    if denomination == 100:
-                        deposit_100 = count
-                    elif denomination == 500:
-                        deposit_500 = count
-                    elif denomination == 1000:
-                        deposit_1000 = count
-                
-                # Check for void notes (unknown denomination)
-                void_match = self.void_notes_pattern.search(line)
-                if void_match:
-                    unknown_retracted = int(void_match.group(1))
-            
-            # Store the extracted values
-            transaction_data["deposit_retract_100"] = deposit_100
-            transaction_data["deposit_retract_500"] = deposit_500
-            transaction_data["deposit_retract_1000"] = deposit_1000
-            transaction_data["deposit_retract_unknown"] = unknown_retracted
-            transaction_data["total_deposit_retracted"] = deposit_100 + deposit_500 + deposit_1000 + unknown_retracted
-
-        # Check for Unknown scenarios
-        if transaction_data["scenario"] == "Unknown":
-            for line in transaction:
-                # Check for regular notes (100, 500, 1000 BDT)
-                note_match = self.deposit_notes_pattern.search(line)
-                if note_match:
-                    denomination = int(note_match.group(1))
-                    count = int(note_match.group(2))
-                    
-                    if denomination == 100:
-                        unknown_100 = count
-                    elif denomination == 500:
-                        unknown_500 = count
-                    elif denomination == 1000:
-                        unknown_1000 = count
-            
-            # Store the extracted values
-            transaction_data["deposit_retract_100"] = unknown_100
-            transaction_data["deposit_retract_500"] = unknown_500
-            transaction_data["deposit_retract_1000"] = unknown_1000
-
         return transaction_data
 
-    def merge_files(self, file_paths, output_path='merged_EJ_logs.txt'):
+    def _process_deposit_notes(self, transaction, index, transaction_data):
+        """
+        Process and extract information about deposited notes from transaction logs.
+        
+        Args:
+            transaction (list): List of transaction lines
+            index (int): Current index in the transaction list
+            transaction_data (dict): Transaction data dictionary to update
+            
+        Returns:
+            dict: Updated transaction data with deposit note information
+        """
         try:
-            with open(output_path, 'w', encoding='utf-8') as outfile:
-                for file_path in file_paths:
-                    try:
-                        with open(file_path, 'r', encoding='utf-8') as infile:
-                            outfile.write(infile.read())
-                            outfile.write('\n')
-                    except Exception as e:
-                        logging.error(f'Error reading file {file_path}: {e}')
-                        return None
-            logging.info(f'Merged files into {output_path}')
-            return output_path
+            # Initialize notes data if not already present
+            if "notes" not in transaction_data:
+                transaction_data["notes"] = {}
+            
+            # Process deposit notes by denomination
+            for i in range(index, min(index + 10, len(transaction))):
+                deposit_match = self.deposit_notes_pattern.search(transaction[i])
+                if deposit_match:
+                    denomination, count = deposit_match.groups()
+                    denomination = int(denomination)
+                    count = int(count)
+                    
+                    # Store deposit information by denomination
+                    transaction_data["notes"][str(denomination)] = count
+                    
+                    # Calculate total if possible
+                    if "total" not in transaction_data:
+                        transaction_data["total"] = 0
+                    transaction_data["total"] += denomination * count
+            
+            # Check for void notes
+            for i in range(index, min(index + 15, len(transaction))):
+                void_match = self.void_notes_pattern.search(transaction[i])
+                if void_match:
+                    void_count = int(void_match.group(1))
+                    transaction_data["void_notes"] = void_count
         except Exception as e:
-            logging.error(f'Error merging files: {e}')
-            return None
+            logging.error(f"Error processing deposit notes: {e}")
+            
+        return transaction_data
