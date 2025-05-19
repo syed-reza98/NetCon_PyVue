@@ -1,40 +1,17 @@
 # controllers/auth_controller.py
 from flask import Blueprint, request, jsonify
-import json
-import os
+from werkzeug.security import generate_password_hash, check_password_hash
+from models import db, User
 
 auth_controller = Blueprint('auth_controller', __name__)
-
-USER_FILE = 'users.json'
-
-# Load users from file
-
-
-def load_users():
-    if not os.path.exists(USER_FILE):
-        return {}
-    with open(USER_FILE, 'r') as f:
-        return json.load(f)
-
-# Save users to file
-
-
-def save_users(users):
-    with open(USER_FILE, 'w') as f:
-        json.dump(users, f)
-
-# Add OPTIONS route handler for CORS preflight requests
-
 
 @auth_controller.route('/register', methods=['OPTIONS'])
 def register_options():
     response = jsonify({})
     response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers',
-                         'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'POST')
     return response, 200
-
 
 @auth_controller.route('/register', methods=['POST'])
 def register():
@@ -49,29 +26,25 @@ def register():
     if password != repassword:
         return jsonify({'message': 'Passwords do not match'}), 400
 
-    users = load_users()
-    if email in users:
+    if User.query.filter_by(email=email).first():
         return jsonify({'message': 'User already exists'}), 400
 
-    users[email] = {'username': username, 'password': password}
-    save_users(users)
+    hashed_password = generate_password_hash(password)
+    new_user = User(email=email, username=username, password=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
 
     response = jsonify({'message': 'Registered successfully'})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response, 200
 
-# Add OPTIONS route handler for CORS preflight requests
-
-
 @auth_controller.route('/login', methods=['OPTIONS'])
 def login_options():
     response = jsonify({})
     response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers',
-                         'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
     response.headers.add('Access-Control-Allow-Methods', 'POST')
     return response, 200
-
 
 @auth_controller.route('/login', methods=['POST'])
 def login():
@@ -79,15 +52,13 @@ def login():
     email = data.get('email')
     password = data.get('password')
 
-    users = load_users()
-    user = users.get(email)
-
-    if not user or user['password'] != password:
+    user = User.query.filter_by(email=email).first()
+    if not user or not check_password_hash(user.password, password):
         return jsonify({'message': 'Invalid credentials'}), 401
 
     response = jsonify({
         'token': 'demo-token',
-        'user': {'email': email, 'username': user['username']}
+        'user': {'email': user.email, 'username': user.username}
     })
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response, 200
