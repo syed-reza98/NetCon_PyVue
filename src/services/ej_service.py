@@ -493,9 +493,9 @@ class EJService:
                 for file_path in file_paths:
                     try:
                         # Normalize the file path
-                        normalized_path = os.path.normpath(file_path)
+                        candidate_path = os.path.abspath(os.path.join(safe_root, file_path))
                         # Ensure the path is within the safe root directory
-                        if not normalized_path.startswith(safe_root):
+                        if not candidate_path.startswith(os.path.abspath(safe_root)):
                             logging.error(f'File path {file_path} is outside the allowed directory.')
                             return None
                         with open(normalized_path, 'r', encoding='utf-8') as infile:
