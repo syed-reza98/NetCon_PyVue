@@ -487,11 +487,18 @@ class EJService:
         return transaction_data
 
     def merge_files(self, file_paths, output_path='merged_EJ_logs.txt'):
+        safe_root = '/safe/root/directory'  # Define the safe root directory
         try:
             with open(output_path, 'w', encoding='utf-8') as outfile:
                 for file_path in file_paths:
                     try:
-                        with open(file_path, 'r', encoding='utf-8') as infile:
+                        # Normalize the file path
+                        normalized_path = os.path.normpath(file_path)
+                        # Ensure the path is within the safe root directory
+                        if not normalized_path.startswith(safe_root):
+                            logging.error(f'File path {file_path} is outside the allowed directory.')
+                            return None
+                        with open(normalized_path, 'r', encoding='utf-8') as infile:
                             outfile.write(infile.read())
                             outfile.write('\n')
                     except Exception as e:
