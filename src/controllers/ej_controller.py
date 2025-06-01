@@ -145,8 +145,8 @@ def load_logs():
 
             return jsonify({"transactions": transactions_json}), 200  # Send only valid transactions
         except Exception as e:
-            print(f"ERROR: {str(e)}")  # Print the error in logs
-            return jsonify({"error": str(e)}), 500
+            logging.error("An error occurred while processing the request", exc_info=True)  # Log the error with stack trace
+            return jsonify({"error": "An internal error occurred"}), 500
     else:
         print("Trial period has expired")
         # "Trial period has expired.", "Please contact Networld Technology Limited to extend your Trial."
