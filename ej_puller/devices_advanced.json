@@ -1,0 +1,30 @@
+[
+    {
+        "host": "test.rebex.net",
+        "username": "demo",
+        "password": "password",
+        "remote_log_path": "/readme.txt",
+        "local_save_dir": "./collected_logs/"
+    },
+    {
+        "host": "192.168.1.101",
+        "username": "windowsuser",
+        "key_filename": "C:/Users/windowsuser/.ssh/id_rsa",
+        "remote_log_path": "C:/logs/app.log",
+        "local_save_dir": "./collected_logs/device101/"
+    },
+    {
+        "host": "192.168.1.102",
+        "username": "windowsuser2",
+        "password": "SuperSecretPassword!",
+        "remote_log_path": "C:/Windows/System32/LogFiles/SomeLog.log",
+        "local_save_dir": "./collected_logs/device102/"
+    },
+    {
+        "host": "myserver.example.com",
+        "username": "admin",
+        "key_filename": "C:/Users/admin/.ssh/id_ed25519",
+        "remote_log_path": "/var/log/syslog",
+        "local_save_dir": "./collected_logs/myserver/"
+    }
+]

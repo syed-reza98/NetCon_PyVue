@@ -1,0 +1,9 @@
+2025-06-03 05:19:07,246 ERROR Failed to collect from myserver.example.com: [Errno 11001] getaddrinfo failed
+2025-06-03 05:19:07,323 INFO Connected (version 2.0, client RebexSSH_5.0.9055.0)
+2025-06-03 05:19:08,305 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-03 05:19:08,305 INFO Authentication (password) successful!
+2025-06-03 05:19:08,833 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-03 05:19:10,069 INFO [chan 0] sftp session closed.
+2025-06-03 05:19:10,070 INFO Collected log from test.rebex.net to ./collected_logs/test.rebex.net_20250603_051906.log
+2025-06-03 05:19:16,973 ERROR Failed to collect from 192.168.1.101: timed out
+2025-06-03 05:19:16,973 ERROR Failed to collect from 192.168.1.102: timed out
