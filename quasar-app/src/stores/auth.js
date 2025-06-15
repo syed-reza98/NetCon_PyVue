@@ -7,7 +7,16 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     token: localStorage.getItem('token') || ''
   }),
+  getters: {
+    isAuthenticated: (state) => !!state.token
+  },
   actions: {
+    // Initialize auth headers on app startup
+    init() {
+      if (this.token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${this.token}`
+      }
+    },
     async login(email, password) {
       try {
         const response = await api.post('/login', { email, password })

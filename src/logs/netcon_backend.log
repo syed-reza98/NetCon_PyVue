@@ -1,0 +1,39 @@
+2025-06-15 09:32:23,720 INFO app Thread-23 (process_request_thread) : OPTIONS http://localhost:5000/api/ej/load_logs - 127.0.0.1
+2025-06-15 09:32:23,721 INFO app Thread-23 (process_request_thread) : Response: 200 - http://localhost:5000/api/ej/load_logs
+2025-06-15 09:32:23,721 INFO werkzeug Thread-23 (process_request_thread) : 127.0.0.1 - - [15/Jun/2025 09:32:23] "OPTIONS /api/ej/load_logs HTTP/1.1" 200 -
+2025-06-15 09:32:23,986 INFO app Thread-25 (process_request_thread) : POST http://localhost:5000/api/ej/load_logs - 127.0.0.1
+2025-06-15 09:32:23,986 INFO services.ej_service Thread-25 (process_request_thread) : Trial check: Current=2025-06-15 09:32:23.986890, End=2025-07-31 00:00:00, Active=True
+2025-06-15 09:32:23,988 INFO app Thread-25 (process_request_thread) : Processing 3 files, total size: 198628 bytes
+2025-06-15 09:32:23,991 WARNING services.ej_service ThreadPoolExecutor-3_0 : Incomplete transaction found at end of file
+2025-06-15 09:32:24,084 ERROR services.ej_service ThreadPoolExecutor-3_0 : Unexpected format for cash item 'BDT100-002,BDT500-003'
+2025-06-15 09:32:24,128 INFO services.ej_service ThreadPoolExecutor-3_1 : Processed 18 transactions from EJDATACopy.LOG
+2025-06-15 09:32:24,137 INFO services.ej_service ThreadPoolExecutor-3_2 : Processed 18 transactions from TestCase.log
+2025-06-15 09:32:24,143 ERROR services.ej_service ThreadPoolExecutor-3_0 : Unexpected format for cash item 'BDT100-004,BDT500-004'
+2025-06-15 09:32:24,147 ERROR services.ej_service ThreadPoolExecutor-3_0 : Unexpected format for cash item 'BDT100-000,BDT500-001'
+2025-06-15 09:32:24,173 INFO services.ej_service ThreadPoolExecutor-3_0 : Processed 21 transactions from EJDATA.LOG
+2025-06-15 09:32:24,176 INFO services.ej_service Thread-25 (process_request_thread) : Processed 57 transactions in 0.19s
+2025-06-15 09:32:24,187 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 14:28:11
+2025-06-15 09:32:24,188 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 14:46:16
+2025-06-15 09:32:24,189 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 14:56:13
+2025-06-15 09:32:24,189 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:03:21
+2025-06-15 09:32:24,190 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:18:01
+2025-06-15 09:32:24,190 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:23:41
+2025-06-15 09:32:24,191 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:25:54
+2025-06-15 09:32:24,191 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:29:25
+2025-06-15 09:32:24,192 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:44:56
+2025-06-15 09:32:24,192 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:49:23
+2025-06-15 09:32:24,192 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 16:00:56
+2025-06-15 09:32:24,193 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 14:28:11
+2025-06-15 09:32:24,194 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 14:46:16
+2025-06-15 09:32:24,195 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 14:56:13
+2025-06-15 09:32:24,195 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:03:21
+2025-06-15 09:32:24,197 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:18:01
+2025-06-15 09:32:24,201 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:23:41
+2025-06-15 09:32:24,201 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:25:54
+2025-06-15 09:32:24,202 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:29:25
+2025-06-15 09:32:24,203 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:44:56
+2025-06-15 09:32:24,204 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 15:49:23
+2025-06-15 09:32:24,204 WARNING app Thread-25 (process_request_thread) : Unable to parse timestamp: 23/02/25 16:00:56
+2025-06-15 09:32:24,258 INFO app Thread-25 (process_request_thread) : Successfully processed 53 transactions from 3 files
+2025-06-15 09:32:24,260 INFO app Thread-25 (process_request_thread) : Response: 200 - http://localhost:5000/api/ej/load_logs
+2025-06-15 09:32:24,261 INFO werkzeug Thread-25 (process_request_thread) : 127.0.0.1 - - [15/Jun/2025 09:32:24] "POST /api/ej/load_logs HTTP/1.1" 200 -
