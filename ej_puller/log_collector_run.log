@@ -1,0 +1,132 @@
+2025-06-26 06:12:58,223 INFO Connected (version 2.0, client RebexSSH_5.0.9300.0)
+2025-06-26 06:12:59,210 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-26 06:12:59,386 INFO Disconnect (code 0): Authentication is already in progress.
+2025-06-26 06:12:59,387 ERROR Failed to collect from test.rebex.net: No existing session
+2025-06-26 06:16:29,492 ERROR Failed to collect from myserver.example.com: [Errno 11001] getaddrinfo failed
+2025-06-26 06:16:29,842 INFO Connected (version 2.0, client RebexSSH_5.0.9300.0)
+2025-06-26 06:16:30,836 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-26 06:16:31,013 INFO Disconnect (code 0): Authentication is already in progress.
+2025-06-26 06:16:31,013 ERROR Failed to collect from test.rebex.net: No existing session
+2025-06-26 06:16:39,492 ERROR Failed to collect from 192.168.1.102: timed out
+2025-06-26 06:16:39,492 ERROR Failed to collect from 192.168.1.101: timed out
+2025-06-26 06:19:28,861 INFO Connected (version 2.0, client RebexSSH_5.0.9300.0)
+2025-06-26 06:19:29,590 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-26 06:19:29,591 INFO Authentication (password) successful!
+2025-06-26 06:19:30,085 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 06:19:31,241 INFO Collected log from test.rebex.net to ./collected_logs/test.rebex.net_20250626_061928.log
+2025-06-26 06:19:31,241 INFO [chan 0] sftp session closed.
+2025-06-26 06:19:39,888 INFO Connected (version 2.0, client RebexSSH_5.0.9300.0)
+2025-06-26 06:19:40,878 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-26 06:19:40,878 INFO Authentication (password) successful!
+2025-06-26 06:19:41,326 ERROR Failed to collect from myserver.example.com: [Errno 11001] getaddrinfo failed
+2025-06-26 06:19:41,406 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 06:19:42,638 INFO Collected log from test.rebex.net to ./collected_logs/test.rebex.net_20250626_061939.log
+2025-06-26 06:19:42,639 INFO [chan 0] sftp session closed.
+2025-06-26 06:19:50,042 ERROR Failed to collect from 192.168.1.101: timed out
+2025-06-26 06:19:50,536 ERROR Failed to collect from 192.168.1.102: timed out
+2025-06-26 07:19:18,799 INFO Connected (version 2.0, client RebexSSH_5.0.9300.0)
+2025-06-26 07:19:19,798 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-26 07:19:19,798 INFO Authentication (password) successful!
+2025-06-26 07:19:19,933 ERROR Failed to collect from myserver.example.com: [Errno 11001] getaddrinfo failed
+2025-06-26 07:19:20,174 INFO Connected (version 2.0, client OpenSSH_for_Windows_9.5)
+2025-06-26 07:19:20,326 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 07:19:20,379 INFO Authentication (publickey) failed.
+2025-06-26 07:19:20,488 INFO Authentication (publickey) failed.
+2025-06-26 07:19:20,503 INFO Authentication (publickey) failed.
+2025-06-26 07:19:20,503 ERROR Authentication failed for 27.147.158.194: Authentication failed.
+2025-06-26 07:19:21,558 INFO Collected log from test.rebex.net to ./collected_logs/test.rebex.net_20250626_071918.log
+2025-06-26 07:19:21,559 INFO [chan 0] sftp session closed.
+2025-06-26 07:19:28,656 ERROR Failed to collect from 192.168.1.101: timed out
+2025-06-26 07:19:29,156 ERROR Failed to collect from 192.168.1.102: timed out
+2025-06-26 07:22:05,922 INFO Connected (version 2.0, client RebexSSH_5.0.9300.0)
+2025-06-26 07:22:06,847 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-26 07:22:06,847 INFO Authentication (password) successful!
+2025-06-26 07:22:07,061 ERROR Failed to collect from myserver.example.com: [Errno 11001] getaddrinfo failed
+2025-06-26 07:22:07,340 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 07:22:07,579 INFO Connected (version 2.0, client OpenSSH_for_Windows_9.5)
+2025-06-26 07:22:07,761 INFO Authentication (publickey) failed.
+2025-06-26 07:22:07,871 INFO Authentication (publickey) failed.
+2025-06-26 07:22:07,886 INFO Authentication (publickey) failed.
+2025-06-26 07:22:07,886 ERROR Authentication failed for 27.147.158.194: Authentication failed.
+2025-06-26 07:22:08,512 INFO Collected log from test.rebex.net to ./collected_logs/test.rebex.net_20250626_072205.log
+2025-06-26 07:22:08,512 INFO [chan 0] sftp session closed.
+2025-06-26 07:22:16,054 ERROR Failed to collect from 192.168.1.101: timed out
+2025-06-26 07:22:16,555 ERROR Failed to collect from 192.168.1.102: timed out
+2025-06-26 07:34:50,640 INFO Connected (version 2.0, client RebexSSH_5.0.9300.0)
+2025-06-26 07:34:51,680 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-26 07:34:51,680 INFO Authentication (password) successful!
+2025-06-26 07:34:52,046 ERROR Failed to collect from myserver.example.com: [Errno 11001] getaddrinfo failed
+2025-06-26 07:34:52,240 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 07:34:52,286 INFO Connected (version 2.0, client OpenSSH_for_Windows_9.5)
+2025-06-26 07:34:52,488 INFO Authentication (publickey) failed.
+2025-06-26 07:34:52,597 INFO Authentication (publickey) failed.
+2025-06-26 07:34:52,613 INFO Authentication (publickey) failed.
+2025-06-26 07:34:52,613 ERROR Authentication failed for 27.147.158.194: Authentication failed.
+2025-06-26 07:34:52,789 INFO Connected (version 2.0, client OpenSSH_for_Windows_9.5)
+2025-06-26 07:34:52,962 INFO Authentication (password) successful!
+2025-06-26 07:34:53,042 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 07:34:53,057 ERROR Failed to collect C:/EJBackup/ from 27.147.158.194: Failure
+2025-06-26 07:34:53,057 INFO [chan 0] sftp session closed.
+2025-06-26 07:34:53,549 INFO Collected log from test.rebex.net to ./collected_logs/test.rebex.net_20250626_073450.log
+2025-06-26 07:34:53,549 INFO [chan 0] sftp session closed.
+2025-06-26 07:35:00,770 ERROR Failed to collect from 192.168.1.101: timed out
+2025-06-26 07:35:01,274 ERROR Failed to collect from 192.168.1.102: timed out
+2025-06-26 07:35:35,083 INFO Connected (version 2.0, client RebexSSH_5.0.9300.0)
+2025-06-26 07:35:36,063 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-26 07:35:36,063 INFO Authentication (password) successful!
+2025-06-26 07:35:36,233 ERROR Failed to collect from myserver.example.com: [Errno 11001] getaddrinfo failed
+2025-06-26 07:35:36,589 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 07:35:36,753 INFO Connected (version 2.0, client OpenSSH_for_Windows_9.5)
+2025-06-26 07:35:36,936 INFO Authentication (publickey) failed.
+2025-06-26 07:35:37,053 INFO Authentication (publickey) failed.
+2025-06-26 07:35:37,068 INFO Authentication (publickey) failed.
+2025-06-26 07:35:37,068 ERROR Authentication failed for 27.147.158.194: Authentication failed.
+2025-06-26 07:35:37,254 INFO Connected (version 2.0, client OpenSSH_for_Windows_9.5)
+2025-06-26 07:35:37,434 INFO Authentication (password) successful!
+2025-06-26 07:35:37,512 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 07:35:37,609 INFO Collected log from 27.147.158.194:C:/EJBackup/new.txt to ./collected_logs/device_27_147_158_194_test/27.147.158.194_new.txt_20250626_073537.log
+2025-06-26 07:35:37,609 INFO [chan 0] sftp session closed.
+2025-06-26 07:35:37,916 INFO Collected log from test.rebex.net to ./collected_logs/test.rebex.net_20250626_073534.log
+2025-06-26 07:35:37,916 INFO [chan 0] sftp session closed.
+2025-06-26 07:35:45,239 ERROR Failed to collect from 192.168.1.101: timed out
+2025-06-26 07:35:45,742 ERROR Failed to collect from 192.168.1.102: timed out
+2025-06-26 07:37:02,074 INFO Connected (version 2.0, client RebexSSH_5.0.9300.0)
+2025-06-26 07:37:02,993 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-26 07:37:02,993 INFO Authentication (password) successful!
+2025-06-26 07:37:03,247 ERROR Failed to collect from myserver.example.com: [Errno 11001] getaddrinfo failed
+2025-06-26 07:37:03,486 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 07:37:03,767 INFO Connected (version 2.0, client OpenSSH_for_Windows_9.5)
+2025-06-26 07:37:03,949 INFO Authentication (publickey) failed.
+2025-06-26 07:37:04,058 INFO Authentication (publickey) failed.
+2025-06-26 07:37:04,073 INFO Authentication (publickey) failed.
+2025-06-26 07:37:04,073 ERROR Authentication failed for 27.147.158.194: Authentication failed.
+2025-06-26 07:37:04,267 INFO Connected (version 2.0, client OpenSSH_for_Windows_9.5)
+2025-06-26 07:37:04,414 INFO Authentication (password) successful!
+2025-06-26 07:37:04,494 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 07:37:04,587 INFO Collected log from 27.147.158.194:C:/EJBackup/new.txt to ./collected_logs/device_27_147_158_194_test/27.147.158.194_new.txt_20250626_073704.log
+2025-06-26 07:37:04,596 ERROR Failed to collect C:/EJBackup from 27.147.158.194: Failure
+2025-06-26 07:37:04,597 INFO [chan 0] sftp session closed.
+2025-06-26 07:37:04,700 INFO Collected log from test.rebex.net to ./collected_logs/test.rebex.net_20250626_073701.log
+2025-06-26 07:37:04,701 INFO [chan 0] sftp session closed.
+2025-06-26 07:37:12,243 ERROR Failed to collect from 192.168.1.101: timed out
+2025-06-26 07:37:12,746 ERROR Failed to collect from 192.168.1.102: timed out
+2025-06-26 07:37:49,765 INFO Connected (version 2.0, client RebexSSH_5.0.9300.0)
+2025-06-26 07:37:50,692 INFO Auth banner: b'Welcome to test.rebex.net! See https://test.rebex.net/ for more information.\n'
+2025-06-26 07:37:50,693 INFO Authentication (password) successful!
+2025-06-26 07:37:50,934 ERROR Failed to collect from myserver.example.com: [Errno 11001] getaddrinfo failed
+2025-06-26 07:37:51,184 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 07:37:51,455 INFO Connected (version 2.0, client OpenSSH_for_Windows_9.5)
+2025-06-26 07:37:51,635 INFO Authentication (publickey) failed.
+2025-06-26 07:37:51,745 INFO Authentication (publickey) failed.
+2025-06-26 07:37:51,760 INFO Authentication (publickey) failed.
+2025-06-26 07:37:51,760 ERROR Authentication failed for 27.147.158.194: Authentication failed.
+2025-06-26 07:37:51,955 INFO Connected (version 2.0, client OpenSSH_for_Windows_9.5)
+2025-06-26 07:37:52,159 INFO Authentication (password) successful!
+2025-06-26 07:37:52,238 INFO [chan 0] Opened sftp connection (server version 3)
+2025-06-26 07:37:52,335 INFO Collected log from 27.147.158.194:C:/EJBackup/new.txt to ./collected_logs/device_27_147_158_194_test/27.147.158.194_new.txt_20250626_073752.log
+2025-06-26 07:37:52,344 ERROR Failed to collect C:/EJBackup from 27.147.158.194: Failure
+2025-06-26 07:37:52,344 INFO [chan 0] sftp session closed.
+2025-06-26 07:37:52,386 INFO Collected log from test.rebex.net to ./collected_logs/test.rebex.net_20250626_073749.log
+2025-06-26 07:37:52,386 INFO [chan 0] sftp session closed.
+2025-06-26 07:37:59,940 ERROR Failed to collect from 192.168.1.101: timed out
+2025-06-26 07:38:00,445 ERROR Failed to collect from 192.168.1.102: timed out

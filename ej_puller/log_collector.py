@@ -9,6 +9,7 @@ import threading
 import logging
 import json
 import argparse
+import fnmatch
 
 # Setup logging
 LOG_FILE = 'log_collector_run.log'
@@ -38,6 +39,28 @@ def load_devices_from_json(json_path):
         logging.error(f"Failed to load device config: {e}")
         return []
 
+def get_matching_files(sftp, pattern):
+    """Get list of files matching a glob pattern on remote server."""
+    try:
+        # Extract directory and pattern
+        directory = os.path.dirname(pattern) or '.'
+        file_pattern = os.path.basename(pattern)
+        
+        # List files in the directory
+        files = sftp.listdir(directory)
+        
+        # Filter files matching the pattern
+        matching_files = []
+        for file in files:
+            if fnmatch.fnmatch(file, file_pattern):
+                full_path = f"{directory}/{file}".replace('\\', '/')
+                matching_files.append(full_path)
+        
+        return matching_files
+    except Exception as e:
+        logging.error(f"Error listing files for pattern {pattern}: {e}")
+        return []
+
 def collect_log(device):
     try:
         os.makedirs(device['local_save_dir'], exist_ok=True)
@@ -47,57 +70,123 @@ def collect_log(device):
         )
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Configure connection parameters with better defaults
         connect_kwargs = {
             'hostname': device['host'],
             'username': device['username'],
-            'timeout': device.get('timeout', 10)
+            'timeout': device.get('timeout', 10),
+            'banner_timeout': 30,  # Increase banner timeout
+            'auth_timeout': 30,    # Increase auth timeout
+            'allow_agent': False,  # Disable SSH agent to avoid conflicts
+            'look_for_keys': False  # Disable automatic key discovery
         }
+        
         if 'key_filename' in device:
             connect_kwargs['key_filename'] = device['key_filename']
+            connect_kwargs['look_for_keys'] = True  # Enable key lookup only when specified
         if 'password' in device:
             connect_kwargs['password'] = device['password']
         if 'port' in device:
             connect_kwargs['port'] = device['port']
+            
         ssh.connect(**connect_kwargs)
         sftp = ssh.open_sftp()
-        try:
-            sftp.stat(device['remote_log_path'])  # Check if file exists
-        except FileNotFoundError:
-            logging.error(f"Remote file not found: {device['remote_log_path']} on {device['host']}")
-            print(f"Remote file not found: {device['remote_log_path']} on {device['host']}")
-            sftp.close()
-            ssh.close()
-            return
+        
         # Support for multiple log files per device
         if isinstance(device['remote_log_path'], list):
+            all_files_to_collect = []
+            
             for remote_path in device['remote_log_path']:
+                # Check if path contains wildcards
+                if '*' in remote_path or '?' in remote_path:
+                    # Handle wildcard patterns
+                    matching_files = get_matching_files(sftp, remote_path)
+                    if matching_files:
+                        all_files_to_collect.extend(matching_files)
+                        logging.info(f"Found {len(matching_files)} files matching pattern {remote_path} on {device['host']}")
+                    else:
+                        logging.warning(f"No files found matching pattern {remote_path} on {device['host']}")
+                else:
+                    # Handle exact file paths
+                    try:
+                        sftp.stat(remote_path)  # Check if file exists
+                        all_files_to_collect.append(remote_path)
+                    except FileNotFoundError:
+                        logging.error(f"Remote file not found: {remote_path} on {device['host']}")
+                        print(f"Remote file not found: {remote_path} on {device['host']}")
+            
+            # Collect all found files
+            for remote_file in all_files_to_collect:
                 local_file = os.path.join(
                     device['local_save_dir'],
-                    f"{device['host']}_{os.path.basename(remote_path)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+                    f"{device['host']}_{os.path.basename(remote_file)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
                 )
                 try:
-                    sftp.get(remote_path, local_file)
-                    logging.info(f"Collected log from {device['host']}:{remote_path} to {local_file}")
-                    print(f"Collected log from {device['host']}:{remote_path} to {local_file}")
+                    sftp.get(remote_file, local_file)
+                    logging.info(f"Collected log from {device['host']}:{remote_file} to {local_file}")
+                    print(f"Collected log from {device['host']}:{remote_file} to {local_file}")
                 except Exception as e:
-                    logging.error(f"Failed to collect {remote_path} from {device['host']}: {e}")
-                    print(f"Failed to collect {remote_path} from {device['host']}: {e}")
+                    logging.error(f"Failed to collect {remote_file} from {device['host']}: {e}")
+                    print(f"Failed to collect {remote_file} from {device['host']}: {e}")
         else:
-            sftp.get(device['remote_log_path'], local_filename)
-            logging.info(f"Collected log from {device['host']} to {local_filename}")
-            print(f"Collected log from {device['host']} to {local_filename}")
-        sftp.close()
-        ssh.close()
+            # Single file path
+            remote_path = device['remote_log_path']
+            if '*' in remote_path or '?' in remote_path:
+                # Handle wildcard pattern
+                matching_files = get_matching_files(sftp, remote_path)
+                for remote_file in matching_files:
+                    local_file = os.path.join(
+                        device['local_save_dir'],
+                        f"{device['host']}_{os.path.basename(remote_file)}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+                    )
+                    try:
+                        sftp.get(remote_file, local_file)
+                        logging.info(f"Collected log from {device['host']}:{remote_file} to {local_file}")
+                        print(f"Collected log from {device['host']}:{remote_file} to {local_file}")
+                    except Exception as e:
+                        logging.error(f"Failed to collect {remote_file} from {device['host']}: {e}")
+                        print(f"Failed to collect {remote_file} from {device['host']}: {e}")
+            else:
+                # Exact file path
+                try:
+                    sftp.stat(remote_path)  # Check if file exists
+                    sftp.get(remote_path, local_filename)
+                    logging.info(f"Collected log from {device['host']} to {local_filename}")
+                    print(f"Collected log from {device['host']} to {local_filename}")
+                except FileNotFoundError:
+                    logging.error(f"Remote file not found: {remote_path} on {device['host']}")
+                    print(f"Remote file not found: {remote_path} on {device['host']}")
+            
+    except paramiko.AuthenticationException as e:
+        logging.error(f"Authentication failed for {device.get('host', 'unknown')}: {e}")
+        print(f"Authentication failed for {device.get('host', 'unknown')}: {e}")
+    except paramiko.SSHException as e:
+        logging.error(f"SSH connection error for {device.get('host', 'unknown')}: {e}")
+        print(f"SSH connection error for {device.get('host', 'unknown')}: {e}")
     except Exception as e:
         logging.error(f"Failed to collect from {device.get('host', 'unknown')}: {e}")
         print(f"Failed to collect from {device.get('host', 'unknown')}: {e}")
+    finally:
+        # Ensure cleanup even if errors occur
+        try:
+            if 'sftp' in locals():
+                sftp.close()
+            if 'ssh' in locals():
+                ssh.close()
+        except Exception:
+            pass  # Ignore cleanup errors
 
 def collect_logs_parallel(devices):
+    import time
     threads = []
-    for device in devices:
+    for i, device in enumerate(devices):
         t = threading.Thread(target=collect_log, args=(device,))
         t.start()
         threads.append(t)
+        # Small delay between starting threads to prevent connection conflicts
+        if i < len(devices) - 1:  # Don't delay after the last device
+            time.sleep(0.5)
     for t in threads:
         t.join()
 
