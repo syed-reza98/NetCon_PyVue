@@ -218,9 +218,10 @@ def load_logs():
                     'files_processed': len(log_contents)
                 }), 200
 
-            # Filter valid transactions
+            # Filter valid transactions - require ALL essential fields to be present
             valid_transactions = df_all_transactions[
-                df_all_transactions[['timestamp', 'card_number', 'transaction_type', 'amount']].notna().any(axis=1)
+                df_all_transactions[['timestamp', 'transaction_type']].notna().all(axis=1) &
+                (df_all_transactions[['card_number', 'amount']].notna().any(axis=1))
             ]
 
             if valid_transactions.empty:

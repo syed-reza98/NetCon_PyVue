@@ -5,7 +5,7 @@ Security utilities for rate limiting, logging, and security monitoring.
 import logging
 import json
 from datetime import datetime, timezone
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from collections import defaultdict, deque
 from flask import request, current_app
 import hashlib
@@ -236,7 +236,7 @@ def sanitize_sql_input(input_str: str) -> str:
     return sanitized
 
 
-def hash_password(password: str, salt: Optional[str] = None) -> tuple[str, str]:
+def hash_password(password: str, salt: Optional[str] = None) -> Tuple[str, str]:
     """
     Hash password with salt.
     

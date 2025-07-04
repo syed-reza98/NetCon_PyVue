@@ -102,7 +102,8 @@ class User(BaseModel):
         self.failed_login_attempts += 1
         if self.failed_login_attempts >= 5:
             # Lock account for 30 minutes
-            self.account_locked_until = datetime.now(timezone.utc).replace(minute=30)
+            from datetime import timedelta
+            self.account_locked_until = datetime.now(timezone.utc) + timedelta(minutes=30)
     
     def reset_failed_login(self):
         """Reset failed login attempts"""
