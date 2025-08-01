@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=true
+      - DATABASE_URL=sqlite:///instance/app.db
+    volumes:
+      - ./backend:/app
+      - ./backend/instance:/app/instance
+    working_dir: /app
+    command: python app/app.py
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - VUE_APP_API_BASE_URL=http://backend:5000/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    working_dir: /app
+    command: npm run dev
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  electron:
+    build:
+      context: .
+      dockerfile: electron.Dockerfile
+    environment:
+      - DISPLAY=${DISPLAY}
+      - DEV=true
+      - APP_URL=http://frontend:8080
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ./electron:/app/electron
+      - ./dist:/app/dist
+      - ./frontend:/app/frontend
+    depends_on:
+      - frontend
+      - backend
+    restart: unless-stopped
+    privileged: true
+
+volumes:
+  backend_data:
+  frontend_modules:

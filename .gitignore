@@ -1,1 +1,115 @@
+# Dependencies
+node_modules/
+.npm/
+.pnpm-debug.log*
+.yarn-integrity
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Build output
+dist/
+build/
+.tmp/
+.cache/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+test_env/
+
+# Database
+*.db
+*.sqlite3
+instance/
+
+# Secrets and config
+.env.local
+.env.production
+.env.development
+*.key
+*.pem
+*.p12
+keys/
+secrets/
+config/secrets/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Application specific
+*.exe
+TestCase.log
+EJDATA.LOG
+EJDATACopy.LOG
+data.json
+response.json
+users.json
+api.json
+
+# Legacy (will be moved)
+collected_logs/
+Old_Scripts/
+CRM*
+
+# Quasar/Vue
+.quasar/
 quasar-app/NetCon.zip
