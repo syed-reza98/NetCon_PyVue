@@ -1,0 +1,56 @@
+[
+    {
+        "host": "test.rebex.net",
+        "username": "demo",
+        "password": "password",
+        "remote_log_path": "/readme.txt",
+        "local_save_dir": "./collected_logs/"
+    },
+    {
+        "host": "192.168.1.101",
+        "username": "windowsuser",
+        "key_filename": "C:/Users/windowsuser/.ssh/id_rsa",
+        "remote_log_path": "C:/logs/app.log",
+        "local_save_dir": "./collected_logs/device101/"
+    },
+    {
+        "host": "192.168.1.102",
+        "username": "windowsuser2",
+        "password": "SuperSecretPassword!",
+        "remote_log_path": "C:/Windows/System32/LogFiles/SomeLog.log",
+        "local_save_dir": "./collected_logs/device102/"
+    },
+    {
+        "host": "myserver.example.com",
+        "username": "admin",
+        "key_filename": "C:/Users/admin/.ssh/id_ed25519",
+        "remote_log_path": "/var/log/syslog",
+        "local_save_dir": "./collected_logs/myserver/"
+    },
+    {
+        "host": "27.147.158.194",
+        "username": "Administrator",
+        "key_filename": "C:/Users/syedr/.ssh/id_ed25519_remote194",
+        "remote_log_path": [
+            "C:/EJBackup/EJ*.067",
+            "C:/EJBackup/EJEB*.392",
+            "C:/EJBackup/new.txt"
+        ],
+        "local_save_dir": "./collected_logs/device_27_147_158_194/",
+        "port": 22,
+        "timeout": 15
+    },
+
+    {
+        "host": "27.147.158.194",
+        "username": "Administrator",
+        "password": "Net@World.ATM@#$Admin1324",
+        "remote_log_path": [
+            "C:/EJBackup/new.txt",
+            "C:/EJBackup"
+        ],
+        "local_save_dir": "./collected_logs/device_27_147_158_194_test/",
+        "port": 22,
+        "timeout": 15
+    }
+]
