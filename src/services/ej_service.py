@@ -104,7 +104,7 @@ class EJService:
         try:
             config = current_app.config
             self.config = {
-                'trial_start_date': config.get('TRIAL_START_DATE', datetime(2025, 6, 6)),
+                'trial_start_date': config.get('TRIAL_START_DATE', datetime(2025, 8, 13)),
                 'trial_duration_days': config.get('TRIAL_DURATION_DAYS', 55),
                 'max_workers': config.get('EJ_MAX_WORKERS', min(4, (os.cpu_count() or 1) + 1)),
                 'chunk_size': config.get('EJ_CHUNK_SIZE', 1000),
