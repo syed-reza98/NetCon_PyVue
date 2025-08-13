@@ -104,8 +104,8 @@ class EJService:
         try:
             config = current_app.config
             self.config = {
-                'trial_start_date': config.get('TRIAL_START_DATE', datetime(2025, 6, 6)),
-                'trial_duration_days': config.get('TRIAL_DURATION_DAYS', 55),
+                'trial_start_date': config.get('TRIAL_START_DATE', datetime(2025, 8, 13)),
+                'trial_duration_days': config.get('TRIAL_DURATION_DAYS', 30),
                 'max_workers': config.get('EJ_MAX_WORKERS', min(4, (os.cpu_count() or 1) + 1)),
                 'chunk_size': config.get('EJ_CHUNK_SIZE', 1000),
                 'max_file_size': config.get('EJ_MAX_FILE_SIZE', 10 * 1024 * 1024),  # 10MB
@@ -117,8 +117,8 @@ class EJService:
             # Fallback config when not in Flask app context
             logger.warning("Flask app context not available, using default configuration")
             self.config = {
-                'trial_start_date': datetime(2025, 6, 6),
-                'trial_duration_days': 55,
+                'trial_start_date': datetime(2025, 8, 13),
+                'trial_duration_days': 30,
                 'max_workers': 4,
                 'chunk_size': 1000,
                 'max_file_size': 10 * 1024 * 1024,

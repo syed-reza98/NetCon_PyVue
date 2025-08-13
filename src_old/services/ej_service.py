@@ -45,8 +45,8 @@ class EJService:
         """
         Check if the trial period is active based on the start date and duration.
         """
-        trial_start_date = datetime.datetime(2026, 5, 6)
-        trial_duration = 15
+        trial_start_date = datetime.datetime(2025, 8, 13)
+        trial_duration = 30
         return datetime.datetime.today() < trial_start_date + datetime.timedelta(days=trial_duration)
 
     def load_logs(self, file_paths):
