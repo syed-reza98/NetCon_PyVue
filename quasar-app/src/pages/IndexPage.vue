@@ -436,7 +436,7 @@
 <script>
 import { ref, computed } from "vue";
 import { useQuasar } from "quasar";
-import axios from "axios";
+import { api } from "boot/axios";
 import { exportFile } from "quasar";
 import { nextTick } from "vue";
 
@@ -716,10 +716,16 @@ export default {
   files.value.forEach((file) => formData.append("files", file));
 
   loading.value = true;
-
   try {
-    const response = await axios.post("http://localhost:5000/api/ej/load_logs", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+    // Ensure Authorization header is included with FormData
+    const token = localStorage.getItem('token');
+    const headers = { "Content-Type": "multipart/form-data" };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    const response = await api.post("/ej/load_logs", formData, {
+      headers: headers,
     });
 
     console.log("✅ API Response:", response.data);
@@ -741,11 +747,20 @@ export default {
       });
       rows.value = [];
     }
-
   } catch (error) {
     console.error("❌ API call failed:", error);
 
-    if (error.response && error.response.status === 403) {
+    if (error.response && error.response.status === 401) {
+      // Authentication failed
+      $q.notify({
+        color: 'negative',
+        message: 'Authentication failed. Please login again.',
+        caption: 'Your session may have expired.',
+        icon: 'lock'
+      });
+      // Optionally redirect to login
+      // $router.push('/login');
+    } else if (error.response && error.response.status === 403) {
       // ❗️ Trial expired specific message
       $q.notify({
         color: 'negative',
